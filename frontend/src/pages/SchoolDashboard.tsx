@@ -90,8 +90,6 @@ export default function SchoolDashboard() {
     const [password, setPassword] =
         useState("");
 
-    const [satelliteId, setSatelliteId] = useState("");
-
     const [isAddingStudent, setIsAddingStudent] =
         useState(false);
 
@@ -312,7 +310,6 @@ export default function SchoolDashboard() {
                     studentName: cleanName,
                     username: cleanUsername,
                     password,
-                    satelliteId: satelliteId.trim(),
                 });
 
 
@@ -325,7 +322,6 @@ export default function SchoolDashboard() {
             setStudentName("");
             setUsername("");
             setPassword("");
-            setSatelliteId("");
 
 
             await loadStudents();
