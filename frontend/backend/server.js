@@ -593,6 +593,82 @@ app.patch(
 );
 
 /*
+ * Admin: Delete a student
+ */
+app.delete(
+    "/api/admin/students/:studentId",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+        try {
+            const studentId =
+                Number(req.params.studentId);
+
+            if (
+                !Number.isInteger(studentId) ||
+                studentId <= 0
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid student ID.",
+                });
+            }
+
+            const student =
+                await findStudentById(studentId);
+
+            if (!student) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Student not found.",
+                });
+            }
+
+            const satelliteId =
+                student.satellite_id;
+
+            const deleted =
+                await deleteStudentByAdmin(studentId);
+
+            if (!deleted) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Student not found.",
+                });
+            }
+
+            if (satelliteId) {
+                const {
+                    deactivateSatellite,
+                } = require("./telemetryStore");
+
+                await deactivateSatellite(
+                    satelliteId
+                );
+            }
+
+            return res.status(200).json({
+                success: true,
+                message:
+                    "Student deleted successfully.",
+            });
+
+        } catch (error) {
+            console.error(
+                "Admin delete student error:",
+                error.message
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Failed to delete student.",
+            });
+        }
+    }
+);
+
+/*
  * Student login
  */
 app.post("/api/auth/student-login", async (req, res) => {
@@ -728,7 +804,6 @@ app.post(
                     studentName: req.body.studentName,
                     username: req.body.username,
                     password: req.body.password,
-                    satelliteId: req.body.satelliteId,
 
                 });
 

@@ -1452,25 +1452,6 @@ export default function SchoolDashboard() {
 
                                         </div>
 
-                                        <div className="sd-form-field">
-
-                                            <label htmlFor="satelliteId">
-                                                Satellite / Node ID
-                                            </label>
-
-                                            <input
-                                                id="satelliteId"
-                                                type="text"
-                                                placeholder="e.g. SAT-005"
-                                                value={satelliteId}
-                                                onChange={(e) =>
-                                                    setSatelliteId(e.target.value)
-                                                }
-                                                maxLength={100}
-                                            />
-
-                                        </div>
-
 
                                         <button
                                             type="submit"

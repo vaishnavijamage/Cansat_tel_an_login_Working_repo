@@ -22,6 +22,19 @@ async function createSatellite(satelliteId) {
     return result;
 }
 
+async function deactivateSatellite(satelliteId) {
+    const [result] = await telemetryPool.execute(
+        `
+        UPDATE satellites
+        SET is_active = FALSE
+        WHERE satellite_id = ?
+        `,
+        [satelliteId]
+    );
+
+    return result.affectedRows > 0;
+}
+
 async function findActiveSatellite(satelliteId) {
     const [rows] = await telemetryPool.execute(
         `
@@ -30,8 +43,9 @@ async function findActiveSatellite(satelliteId) {
             is_active,
             last_seen_at
         FROM satellites
-        WHERE satellite_id = ?
-        LIMIT 1
+       WHERE satellite_id = ?
+       AND is_active = TRUE
+       LIMIT 1
         `,
         [satelliteId]
     );
@@ -118,4 +132,5 @@ module.exports = {
     findActiveSatellite,
     saveTelemetryBatch,
     createSatellite,
+    deactivateSatellite,
 };

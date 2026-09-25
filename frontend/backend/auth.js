@@ -5,12 +5,18 @@ const {
 } = require("./password");
 
 const {
+    createSatellite,
+    deactivateSatellite,
+} = require("./telemetryStore");
+
+const {
     findSchoolByEmail,
     createSchool,
     findSchoolById,
     findStudentById,
     findStudentByUsername,
     createStudent,
+    updateStudentSatelliteId,
     findStudentsBySchoolId,
     deactivateStudent,
     deleteStudent,
@@ -26,6 +32,7 @@ const {
 const {
     deleteSessionsByUser,
 } = require("./session");
+
 
 const pool = require("./database");
 
@@ -584,7 +591,7 @@ function validateStudentCreation({
     studentName,
     username,
     password,
-    satelliteId,
+
 }) {
     const cleanStudentName =
         typeof studentName === "string"
@@ -621,26 +628,7 @@ function validateStudentCreation({
         );
     }
 
-    const cleanSatelliteId =
-        typeof satelliteId === "string"
-            ? satelliteId.trim()
-            : "";
 
-    if (!cleanSatelliteId) {
-        throw new Error(
-            "Satellite ID is required."
-        );
-    }
-
-    if (
-        !/^[A-Za-z0-9._:-]{2,100}$/.test(
-            cleanSatelliteId
-        )
-    ) {
-        throw new Error(
-            "Satellite ID must be 2-100 characters and may contain only letters, numbers, dots, underscores, colons and hyphens."
-        );
-    }
 
     /*
      * Username rules:
@@ -679,9 +667,9 @@ function validateStudentCreation({
         studentName: cleanStudentName,
         username: cleanUsername,
         password,
-        satelliteId: cleanSatelliteId,
     };
 }
+
 
 
 /**
@@ -692,7 +680,6 @@ async function createStudentAccount({
     studentName,
     username,
     password,
-    satelliteId,
 }) {
     if (
         !Number.isInteger(schoolId) ||
@@ -708,7 +695,6 @@ async function createStudentAccount({
             studentName,
             username,
             password,
-            satelliteId,
         });
 
     const existingStudent =
@@ -735,13 +721,39 @@ async function createStudentAccount({
             username:
                 validated.username,
             passwordHash,
-            satelliteId:
-                validated.satelliteId,
+            satelliteId: null,
         });
 
     if (!student) {
         throw new Error(
             "Unable to create student account."
+        );
+    }
+    const satelliteId =
+        `SAT-${String(student.id).padStart(4, "0")}`;
+
+    const updated =
+        await updateStudentSatelliteId(
+            student.id,
+            schoolId,
+            satelliteId
+        );
+
+    if (!updated) {
+        await deleteStudent(student.id, schoolId);
+
+        throw new Error(
+            "Unable to assign satellite ID."
+        );
+    }
+
+    try {
+        await createSatellite(satelliteId);
+    } catch (error) {
+        await deleteStudent(student.id, schoolId);
+
+        throw new Error(
+            "Unable to register satellite."
         );
     }
 
@@ -750,7 +762,7 @@ async function createStudentAccount({
         schoolId: student.school_id,
         studentName: student.student_name,
         username: student.username,
-        satelliteId: student.satellite_id,
+        satelliteId,
         isActive: student.is_active,
         createdAt: student.created_at,
     };
@@ -836,14 +848,36 @@ async function deleteSchoolStudent(studentId, schoolId) {
         throw new Error("Invalid school account.");
     }
 
-    const deleted = await deleteStudent(
-        parsedStudentId,
-        schoolId
-    );
+    const student =
+        await findStudentById(parsedStudentId);
+
+    if (
+        !student ||
+        student.school_id !== schoolId
+    ) {
+        throw new Error(
+            "Student not found or does not belong to this school."
+        );
+    }
+
+    const satelliteId =
+        student.satellite_id;
+
+    const deleted =
+        await deleteStudent(
+            parsedStudentId,
+            schoolId
+        );
 
     if (!deleted) {
         throw new Error(
-            "Student not found or does not belong to this school."
+            "Unable to delete student."
+        );
+    }
+
+    if (satelliteId) {
+        await deactivateSatellite(
+            satelliteId
         );
     }
 

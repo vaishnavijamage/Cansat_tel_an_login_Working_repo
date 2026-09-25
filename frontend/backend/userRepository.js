@@ -252,6 +252,25 @@ async function deleteStudent(studentId, schoolId) {
     return result.affectedRows > 0;
 }
 
+
+async function updateStudentSatelliteId(
+    studentId,
+    schoolId,
+    satelliteId
+) {
+    const [result] = await pool.execute(
+        `
+        UPDATE students
+        SET satellite_id = ?
+        WHERE id = ?
+          AND school_id = ?
+        `,
+        [satelliteId, studentId, schoolId]
+    );
+
+    return result.affectedRows > 0;
+}
+
 /**
  * Update a school's password hash.
  */
@@ -518,6 +537,7 @@ module.exports = {
     deleteStudentByAdmin,
 
     findActiveSatelliteOwners,
-    findActiveSatelliteOwnerBySatelliteId
+    findActiveSatelliteOwnerBySatelliteId,
+    updateStudentSatelliteId,
 };
 

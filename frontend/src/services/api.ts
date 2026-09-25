@@ -179,12 +179,13 @@ export function deleteStudent(studentId: number) {
 }
 /*
  * Create a student account
+
+
  */
 export function createStudent(data: {
     studentName: string;
     username: string;
     password: string;
-    satelliteId: string;
 }) {
     return apiRequest("/api/students", {
         method: "POST",
