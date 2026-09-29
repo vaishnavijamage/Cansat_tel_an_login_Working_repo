@@ -7,7 +7,7 @@ import {
     UserRound,
 } from "lucide-react";
 
-import SatelliteDashboard from "./SatelliteDashboard";
+import StudentSatelliteDashboard from "./StudentSatelliteDashboard";
 
 import {
     getStudentProfile,
@@ -1050,7 +1050,7 @@ export default function StudentDashboard() {
 
                 <section className="student-satellite-area">
 
-                    <SatelliteDashboard />
+                    <StudentSatelliteDashboard />
 
                 </section>
 

@@ -50,7 +50,7 @@ function sanitizeTelemetry(packet) {
  *
  * Returns the latest telemetry for all satellites.
  */
-router.get("/latest", requireAuth, async (req, res) => {
+router.get("/latest", async (req, res) => {
     try {
         const [telemetry, owners] =
             await Promise.all([
@@ -59,24 +59,8 @@ router.get("/latest", requireAuth, async (req, res) => {
             ]);
 
 
-        let visibleOwners = owners;
-
-        if (req.user.type === "school") {
-            visibleOwners = owners.filter(
-                (owner) =>
-                    owner.school_id === req.user.id
-            );
-        }
-
-        if (req.user.type === "student") {
-            visibleOwners = owners.filter(
-                (owner) =>
-                    owner.student_id === req.user.id
-            );
-        }
-
         const ownerMap = new Map(
-            visibleOwners.map((owner) => [
+            owners.map((owner) => [
                 owner.satellite_id,
                 owner,
             ])

@@ -360,6 +360,10 @@ http://localhost:5173
 
 Open that URL in the browser.
 
+The common telemetry dashboard marks a satellite offline when its latest
+`event_time` is more than 10 seconds old. To change this threshold, set
+`VITE_TELEMETRY_STALE_THRESHOLD_MS` in the frontend environment (milliseconds).
+
 ## 13. Normal startup order
 
 Every normal local run:
