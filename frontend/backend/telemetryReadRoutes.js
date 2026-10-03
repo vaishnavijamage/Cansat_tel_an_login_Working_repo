@@ -4,6 +4,7 @@ const telemetryPool = require("./telemetryDatabase");
 const {
     requireAuth,
     requireStudent,
+    requireSchool,
 } = require("./authMiddleware");
 
 const {
@@ -52,12 +53,19 @@ function sanitizeTelemetry(packet) {
  */
 router.get("/latest", async (req, res) => {
     try {
-        const [telemetry, owners] =
+        const [telemetry, owners, [satelliteCountRows]] =
             await Promise.all([
                 getAllLatestTelemetry(),
                 findActiveSatelliteOwners(),
+                telemetryPool.query(
+                    "SELECT COUNT(*) AS registered_count FROM satellites"
+                ),
             ]);
 
+        const registeredCount =
+            Number(
+                satelliteCountRows[0].registered_count
+            );
 
         const ownerMap = new Map(
             owners.map((owner) => [
@@ -95,6 +103,7 @@ router.get("/latest", async (req, res) => {
         return res.status(200).json({
             success: true,
             count: enrichedTelemetry.length,
+            registeredCount,
             telemetry: enrichedTelemetry,
         });
     } catch (error) {
@@ -188,6 +197,69 @@ router.get(
                 success: false,
                 message:
                     "Student telemetry is temporarily unavailable.",
+            });
+        }
+    }
+);
+
+
+/*
+ * Logged-in school telemetry
+ *
+ * The school ID comes from the authenticated session. The response
+ * includes every active assigned satellite and its Redis latest state,
+ * including stale packets and assignments with no packet yet.
+ */
+router.get(
+    "/school",
+    requireAuth,
+    requireSchool,
+    async (req, res) => {
+        try {
+            const [telemetry, owners] =
+                await Promise.all([
+                    getAllLatestTelemetry(),
+                    findActiveSatelliteOwners(),
+                ]);
+
+            const latestBySatellite = new Map(
+                telemetry.map((packet) => [
+                    packet.satellite_id,
+                    packet,
+                ])
+            );
+
+            const satellites = owners
+                .filter((owner) =>
+                    String(owner.school_id) ===
+                    String(req.user.id)
+                )
+                .map((owner) => ({
+                    satellite_id:
+                        owner.satellite_id,
+                    telemetry:
+                        sanitizeTelemetry(
+                            latestBySatellite.get(
+                                owner.satellite_id
+                            )
+                        ),
+                }));
+
+            return res.status(200).json({
+                success: true,
+                count: satellites.length,
+                satellites,
+            });
+        } catch (error) {
+            console.error(
+                "School telemetry request failed:",
+                error
+            );
+
+            return res.status(503).json({
+                success: false,
+                message:
+                    "School telemetry is temporarily unavailable.",
             });
         }
     }

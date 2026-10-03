@@ -33,19 +33,12 @@ import "./SatelliteDashboard.css";
    CONFIGURATION
    ========================================================= */
 
-const APPS_SCRIPT_URL = "";
-/*
- * Later put your Google Apps Script Web App URL here.
- *
- * Example:
- *
- * const APPS_SCRIPT_URL =
- *   "https://script.google.com/macros/s/XXXXXXXX/exec";
- *
- * Leave empty for now to use demo data.
- */
+const API_BASE_URL = (
+    import.meta.env.VITE_API_URL || ""
+).replace(/\/$/, "");
 
 const AUTO_REFRESH_MS = 30_000;
+const OFFLINE_AFTER_MS = 5 * 60 * 1000;
 
 
 /* =========================================================
@@ -56,77 +49,46 @@ export type SatelliteTelemetry = {
     id: string;
     name: string;
 
-    latitude: number;
-    longitude: number;
+    latitude: number | null;
+    longitude: number | null;
 
     temperature: number | null;
     humidity: number | null;
     pressure: number | null;
 
-    timestamp: string;
+    timestamp: string | null;
 
     signal: number | null;
 
-    status: "online" | "offline" | "warning";
+    status: "online" | "offline" | "warning" | "unknown";
 
     altitude?: number | null;
     speed?: number | null;
     battery?: number | null;
 };
 
+type BackendTelemetry = {
+    satellite_id: string;
+    event_time?: string | null;
+    altitude_msl?: number | null;
+    altitude_agl?: number | null;
+    temperature?: number | null;
+    humidity?: number | null;
+    pitch?: number | null;
+    roll?: number | null;
+    acceleration?: number | null;
+    wifi_rssi?: number | null;
+};
 
-/* =========================================================
-   DEMO DATA
-   Replace only the data provider later.
-   ========================================================= */
-
-const DEMO_SATELLITES: SatelliteTelemetry[] = [
-    {
-        id: "SAT-001",
-        name: "SPARK-01",
-        latitude: 18.5204,
-        longitude: 73.8567,
-        temperature: 27.4,
-        humidity: 58,
-        pressure: 1008.6,
-        timestamp: new Date().toISOString(),
-        signal: 94,
-        status: "online",
-        altitude: 420,
-        speed: 7.4,
-        battery: 87,
-    },
-    {
-        id: "SAT-002",
-        name: "SPARK-02",
-        latitude: 19.076,
-        longitude: 72.8777,
-        temperature: 29.1,
-        humidity: 63,
-        pressure: 1006.2,
-        timestamp: new Date().toISOString(),
-        signal: 81,
-        status: "online",
-        altitude: 418,
-        speed: 7.5,
-        battery: 74,
-    },
-    {
-        id: "SAT-003",
-        name: "SPARK-03",
-        latitude: 28.6139,
-        longitude: 77.209,
-        temperature: 31.2,
-        humidity: 49,
-        pressure: 1002.8,
-        timestamp: new Date().toISOString(),
-        signal: 58,
-        status: "warning",
-        altitude: 425,
-        speed: 7.3,
-        battery: 51,
-    },
-];
+type SchoolSatelliteResponse = {
+    success: boolean;
+    count: number;
+    satellites: {
+        satellite_id: string;
+        telemetry: BackendTelemetry | null;
+    }[];
+    message?: string;
+};
 
 
 /* =========================================================
@@ -197,282 +159,102 @@ function numberOrNull(value: unknown): number | null {
 }
 
 
-function stringValue(
-    value: unknown,
-    fallback = ""
-): string {
-    if (
-        value === null ||
-        value === undefined
-    ) {
-        return fallback;
-    }
-
-    return String(value);
-}
-
-
-function normalizeStatus(
-    value: unknown
-): SatelliteTelemetry["status"] {
-    const status =
-        String(value ?? "")
-            .trim()
-            .toLowerCase();
-
-    if (
-        status === "offline" ||
-        status === "inactive" ||
-        status === "lost"
-    ) {
-        return "offline";
-    }
-
-    if (
-        status === "warning" ||
-        status === "weak" ||
-        status === "unstable"
-    ) {
-        return "warning";
-    }
-
-    return "online";
-}
-
-
-/*
- * This adapter allows many different column names.
- *
- * Therefore your Apps Script can return:
- *
- * latitude
- * Latitude
- * lat
- *
- * etc.
- */
-
-function normalizeSatellite(
-    raw: Record<string, unknown>,
-    index: number
-): SatelliteTelemetry {
-    const get = (
-        ...keys: string[]
-    ): unknown => {
-        for (const key of keys) {
-            if (
-                raw[key] !== undefined &&
-                raw[key] !== null &&
-                raw[key] !== ""
-            ) {
-                return raw[key];
-            }
-        }
-
-        return undefined;
-    };
-
-    const latitude =
-        numberOrNull(
-            get(
-                "latitude",
-                "Latitude",
-                "lat",
-                "Lat"
-            )
-        );
-
-    const longitude =
-        numberOrNull(
-            get(
-                "longitude",
-                "Longitude",
-                "lon",
-                "lng",
-                "Long"
-            )
-        );
-
-    return {
-        id:
-            stringValue(
-                get(
-                    "id",
-                    "ID",
-                    "satellite_id",
-                    "Satellite ID",
-                    "Can Sat ID"
-                ),
-                `SAT-${String(index + 1).padStart(3, "0")}`
-            ),
-
-        name:
-            stringValue(
-                get(
-                    "name",
-                    "Name",
-                    "satellite_name",
-                    "Satellite Name",
-                    "Can Sat Name"
-                ),
-                `Satellite ${index + 1}`
-            ),
-
-        latitude:
-            latitude ?? 0,
-
-        longitude:
-            longitude ?? 0,
-
-        temperature:
-            numberOrNull(
-                get(
-                    "temperature",
-                    "Temperature",
-                    "temp",
-                    "Temp"
-                )
-            ),
-
-        humidity:
-            numberOrNull(
-                get(
-                    "humidity",
-                    "Humidity"
-                )
-            ),
-
-        pressure:
-            numberOrNull(
-                get(
-                    "pressure",
-                    "Pressure"
-                )
-            ),
-
-        timestamp:
-            stringValue(
-                get(
-                    "timestamp",
-                    "Timestamp",
-                    "date_time",
-                    "Date & Time",
-                    "DateTime",
-                    "datetime"
-                ),
-                new Date().toISOString()
-            ),
-
-        signal:
-            numberOrNull(
-                get(
-                    "signal",
-                    "Signal",
-                    "signal_strength",
-                    "Signal Strength"
-                )
-            ),
-
-        status:
-            normalizeStatus(
-                get(
-                    "status",
-                    "Status"
-                )
-            ),
-
-        altitude:
-            numberOrNull(
-                get(
-                    "altitude",
-                    "Altitude"
-                )
-            ),
-
-        speed:
-            numberOrNull(
-                get(
-                    "speed",
-                    "Speed"
-                )
-            ),
-
-        battery:
-            numberOrNull(
-                get(
-                    "battery",
-                    "Battery"
-                )
-            ),
-    };
-}
-
-
 /* =========================================================
    DATA PROVIDER
    ========================================================= */
 
+function parseServerDate(value: string | null): Date | null {
+    if (!value) {
+        return null;
+    }
+
+    const normalized = value.includes("T")
+        ? value
+        : value.replace(" ", "T");
+    const date = new Date(normalized);
+
+    return Number.isNaN(date.getTime())
+        ? null
+        : date;
+}
+
+function getNodeStatus(timestamp: string | null): SatelliteTelemetry["status"] {
+    const date = parseServerDate(timestamp);
+
+    if (!date) {
+        return "unknown";
+    }
+
+    const age = Date.now() - date.getTime();
+
+    return age < 0 || age <= OFFLINE_AFTER_MS
+        ? "online"
+        : "offline";
+}
+
+function normalizeSatellite(
+    record: SchoolSatelliteResponse["satellites"][number]
+): SatelliteTelemetry {
+    const telemetry = record.telemetry;
+    const timestamp = telemetry?.event_time ?? null;
+
+    return {
+        id: record.satellite_id,
+        name: "",
+        latitude: null,
+        longitude: null,
+        temperature: numberOrNull(telemetry?.temperature),
+        humidity: numberOrNull(telemetry?.humidity),
+        pressure: null,
+        timestamp,
+        signal: numberOrNull(telemetry?.wifi_rssi),
+        status: getNodeStatus(timestamp),
+        altitude: numberOrNull(telemetry?.altitude_msl),
+        speed: null,
+        battery: null,
+    };
+}
+
 async function fetchSatelliteData(): Promise<
     SatelliteTelemetry[]
 > {
-    /*
-     * No URL = demo data.
-     */
-
-    if (!APPS_SCRIPT_URL) {
-        return DEMO_SATELLITES;
-    }
-
     const response = await fetch(
-        APPS_SCRIPT_URL,
+        `${API_BASE_URL}/api/v1/telemetry/school`,
         {
             method: "GET",
+            credentials: "include",
             headers: {
                 Accept: "application/json",
             },
+            cache: "no-store",
         }
     );
 
-    if (!response.ok) {
+    let json: SchoolSatelliteResponse;
+
+    try {
+        json = await response.json();
+    } catch {
+        throw new Error("The server returned an invalid response.");
+    }
+
+    if (!response.ok || !json.success) {
         throw new Error(
-            `Satellite API returned ${response.status}`
+            json.message || "Unable to load satellite data."
         );
     }
 
-    const json = await response.json();
+    if (!Array.isArray(json.satellites)) {
+        throw new Error("Satellite response format is invalid.");
+    }
 
-    /*
-     * Supports:
-     *
-     * [ {...}, {...} ]
-     *
-     * OR:
-     *
-     * { data: [...] }
-     *
-     * OR:
-     *
-     * { satellites: [...] }
-     */
-
-    const rows = Array.isArray(json)
-        ? json
-        : Array.isArray(json?.data)
-            ? json.data
-            : Array.isArray(json?.satellites)
-                ? json.satellites
-                : [];
-
-    return rows.map(
-        (
-            item: Record<string, unknown>,
-            index: number
-        ) =>
-            normalizeSatellite(
-                item,
-                index
-            )
-    );
+    return json.satellites
+        .filter((record) =>
+            record &&
+            typeof record.satellite_id === "string" &&
+            record.satellite_id.length > 0
+        )
+        .map(normalizeSatellite);
 }
 
 
@@ -481,12 +263,12 @@ async function fetchSatelliteData(): Promise<
    ========================================================= */
 
 function formatDate(
-    value: string
+    value: string | null
 ): string {
-    const date = new Date(value);
+    const date = parseServerDate(value);
 
-    if (Number.isNaN(date.getTime())) {
-        return value;
+    if (!date) {
+        return value || "—";
     }
 
     return date.toLocaleString(
@@ -525,13 +307,13 @@ function downloadCSV(
     const rows = satellites.map(
         (satellite) => [
             satellite.id,
-            satellite.name,
-            satellite.latitude,
-            satellite.longitude,
+            satellite.name || "—",
+            satellite.latitude ?? "",
+            satellite.longitude ?? "",
             satellite.temperature ?? "",
             satellite.humidity ?? "",
             satellite.pressure ?? "",
-            satellite.timestamp,
+            satellite.timestamp ?? "",
             satellite.signal ?? "",
             satellite.status,
             satellite.altitude ?? "",
@@ -592,19 +374,19 @@ function downloadCSV(
 export default function SatelliteDashboard() {
     const [satellites, setSatellites] =
         useState<SatelliteTelemetry[]>(
-            DEMO_SATELLITES
+            []
         );
 
     const [selectedSatelliteId, setSelectedSatelliteId] =
         useState<string>(
-            DEMO_SATELLITES[0]?.id ?? ""
+            ""
         );
 
     const [search, setSearch] =
         useState("");
 
     const [isLoading, setIsLoading] =
-        useState(false);
+        useState(true);
 
     const [error, setError] =
         useState("");
@@ -625,20 +407,36 @@ export default function SatelliteDashboard() {
             const data =
                 await fetchSatelliteData();
 
-            setSatellites(data);
+            setSatellites((currentSatellites) =>
+                data.map((satellite) => {
+                    if (satellite.timestamp) {
+                        return satellite;
+                    }
 
-            if (
-                data.length > 0 &&
-                !data.some(
+                    const previousSatellite =
+                        currentSatellites.find(
+                            (current) => current.id === satellite.id
+                        );
+
+                    return previousSatellite
+                        ? {
+                            ...previousSatellite,
+                            status: getNodeStatus(
+                                previousSatellite.timestamp
+                            ),
+                        }
+                        : satellite;
+                })
+            );
+
+            setSelectedSatelliteId((currentId) =>
+                data.some(
                     (satellite) =>
-                        satellite.id ===
-                        selectedSatelliteId
+                        satellite.id === currentId
                 )
-            ) {
-                setSelectedSatelliteId(
-                    data[0].id
-                );
-            }
+                    ? currentId
+                    : data[0]?.id ?? ""
+            );
 
             setLastUpdated(new Date());
         } catch (err) {
@@ -648,7 +446,9 @@ export default function SatelliteDashboard() {
             );
 
             setError(
-                "Unable to load satellite data."
+                err instanceof Error
+                    ? err.message
+                    : "Unable to load satellite data."
             );
         } finally {
             setIsLoading(false);
@@ -657,15 +457,11 @@ export default function SatelliteDashboard() {
 
 
     useEffect(() => {
-        loadData();
-
-        if (!APPS_SCRIPT_URL) {
-            return;
-        }
+        void loadData();
 
         const interval =
             window.setInterval(
-                loadData,
+                () => void loadData(),
                 AUTO_REFRESH_MS
             );
 
@@ -727,12 +523,7 @@ export default function SatelliteDashboard() {
                 "online"
         ).length;
 
-    const warningCount =
-        satellites.filter(
-            (satellite) =>
-                satellite.status ===
-                "warning"
-        ).length;
+    const warningCount: number | null = null;
 
     const offlineCount =
         satellites.filter(
@@ -897,7 +688,7 @@ export default function SatelliteDashboard() {
                         </span>
 
                         <strong>
-                            {warningCount}
+                            {warningCount ?? "—"}
                         </strong>
                     </div>
 
@@ -982,27 +773,23 @@ export default function SatelliteDashboard() {
                                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                 />
 
-                                <MapCenter
-                                    latitude={
-                                        selectedSatellite.latitude
-                                    }
-                                    longitude={
-                                        selectedSatellite.longitude
-                                    }
-                                />
+                                {selectedSatellite.latitude !== null &&
+                                    selectedSatellite.longitude !== null && (
+                                        <MapCenter
+                                            latitude={selectedSatellite.latitude}
+                                            longitude={selectedSatellite.longitude}
+                                        />
+                                    )}
 
 
                                 {filteredSatellites
                                     .filter(
-                                        (satellite) =>
-                                            Number.isFinite(
-                                                satellite.latitude
-                                            ) &&
-                                            Number.isFinite(
-                                                satellite.longitude
-                                            ) &&
-                                            satellite.latitude !== 0 &&
-                                            satellite.longitude !== 0
+                                        (satellite): satellite is SatelliteTelemetry & {
+                                            latitude: number;
+                                            longitude: number;
+                                        } =>
+                                            satellite.latitude !== null &&
+                                            satellite.longitude !== null
                                     )
                                     .map(
                                         (
@@ -1034,7 +821,7 @@ export default function SatelliteDashboard() {
 
                                                         <strong>
                                                             {
-                                                                satellite.name
+                                                                satellite.name || "—"
                                                             }
                                                         </strong>
 
@@ -1150,7 +937,7 @@ export default function SatelliteDashboard() {
 
                                             <strong>
                                                 {
-                                                    satellite.name
+                                                    satellite.name || "—"
                                                 }
                                             </strong>
 
@@ -1206,7 +993,7 @@ export default function SatelliteDashboard() {
 
                                     <h2>
                                         {
-                                            selectedSatellite.name
+                                                selectedSatellite.name || "—"
                                         }
                                     </h2>
 
@@ -1305,11 +1092,11 @@ export default function SatelliteDashboard() {
                                     size={20}
                                 />
                             }
-                            label="Signal"
+                            label="Wi-Fi RSSI"
                             value={
                                 selectedSatellite.signal
                             }
-                            unit="%"
+                            unit=" dBm"
                         />
 
                         <TelemetryCard
@@ -1318,11 +1105,11 @@ export default function SatelliteDashboard() {
                                     size={20}
                                 />
                             }
-                            label="Altitude"
+                            label="Altitude MSL"
                             value={
                                 selectedSatellite.altitude
                             }
-                            unit="km"
+                            unit=" m"
                         />
 
                         <TelemetryCard
@@ -1362,19 +1149,10 @@ export default function SatelliteDashboard() {
                                 </span>
 
                                 <strong>
-                                    {
-                                        selectedSatellite.latitude.toFixed(
-                                            5
-                                        )
-                                    }
-                                    °
-                                    {" / "}
-                                    {
-                                        selectedSatellite.longitude.toFixed(
-                                            5
-                                        )
-                                    }
-                                    °
+                                    {selectedSatellite.latitude !== null &&
+                                    selectedSatellite.longitude !== null
+                                        ? `${selectedSatellite.latitude.toFixed(5)}° / ${selectedSatellite.longitude.toFixed(5)}°`
+                                        : "—"}
                                 </strong>
 
                             </div>
@@ -1397,9 +1175,7 @@ export default function SatelliteDashboard() {
                                 </span>
 
                                 <strong>
-                                    {formatDate(
-                                        selectedSatellite.timestamp
-                                    )}
+                                    {formatDate(selectedSatellite.timestamp)}
                                 </strong>
 
                             </div>

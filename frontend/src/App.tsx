@@ -37,12 +37,7 @@ function App() {
 
         <Route
           path="/"
-          element={
-            <Navigate
-              to="/login"
-              replace
-            />
-          }
+          element={<TelemetryTestDashboard />}
         />
 
 
@@ -53,6 +48,21 @@ function App() {
         <Route
           path="/login"
           element={<Login />}
+        />
+
+        <Route
+          path="/login/student"
+          element={<Login />}
+        />
+
+        <Route
+          path="/login/school"
+          element={<Login />}
+        />
+
+        <Route
+          path="/login/admin"
+          element={<AdminLogin />}
         />
 
         <Route
@@ -81,7 +91,7 @@ function App() {
         ========================================= */}
 
         <Route
-          path="/dashboard"
+          path="/school"
           element={
             <ProtectedSchoolRoute>
               <SchoolDashboard />
@@ -95,7 +105,7 @@ function App() {
         ========================================= */}
 
         <Route
-          path="/student-dashboard"
+          path="/student"
           element={
             <ProtectedStudentRoute>
               <StudentDashboard />
@@ -105,8 +115,18 @@ function App() {
 
 
         <Route
+          path="/dashboard"
+          element={<Navigate to="/school" replace />}
+        />
+
+        <Route
+          path="/student-dashboard"
+          element={<Navigate to="/student" replace />}
+        />
+
+        <Route
           path="/admin-login"
-          element={<AdminLogin />}
+          element={<Navigate to="/login/admin" replace />}
         />
 
 

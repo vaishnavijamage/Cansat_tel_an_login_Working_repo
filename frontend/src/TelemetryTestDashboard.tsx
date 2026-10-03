@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -436,6 +437,32 @@ function extractTelemetryArray(
     }
 
     return [];
+}
+
+function extractRegisteredSatelliteCount(
+    response: unknown,
+): number | null {
+    if (
+        !response ||
+        typeof response !== "object" ||
+        !("registeredCount" in response)
+    ) {
+        return null;
+    }
+
+    const count = Number(
+        (response as Record<string, unknown>)
+            .registeredCount,
+    );
+
+    if (
+        !Number.isSafeInteger(count) ||
+        count < 0
+    ) {
+        return null;
+    }
+
+    return count;
 }
 
 /* =========================================================
@@ -871,6 +898,9 @@ export default function SatelliteDashboard() {
     const [satellites, setSatellites] =
         useState<Satellite[]>([]);
 
+    const [registeredSatelliteCount, setRegisteredSatelliteCount] =
+        useState<number | null>(null);
+
     const [statusCheckTime, setStatusCheckTime] =
         useState(() => Date.now());
 
@@ -1033,6 +1063,10 @@ export default function SatelliteDashboard() {
 
                     const json =
                         await response.json();
+
+                    setRegisteredSatelliteCount(
+                        extractRegisteredSatelliteCount(json),
+                    );
 
                     const rawData =
                         extractTelemetryArray(
@@ -1378,7 +1412,7 @@ export default function SatelliteDashboard() {
                 .header-inner {
                     max-width: 1400px;
                     margin: auto;
-                    padding: 14px 22px;
+                    padding: 10px 18px;
 
                     display: flex;
                     align-items: center;
@@ -1395,8 +1429,8 @@ export default function SatelliteDashboard() {
                 }
 
                 .brand-icon {
-                    width: 44px;
-                    height: 44px;
+                    width: 40px;
+                    height: 40px;
 
                     border-radius: 10px;
 
@@ -1480,10 +1514,10 @@ export default function SatelliteDashboard() {
                     max-width: 1400px;
                     margin: auto;
 
-                    padding: 0 22px 12px;
+                    padding: 0 18px 8px;
 
                     display: flex;
-                    gap: 8px;
+                    gap: 6px;
                 }
 
                 .nav-button {
@@ -1493,14 +1527,69 @@ export default function SatelliteDashboard() {
 
                     border-radius: 9px;
 
-                    padding: 9px 14px;
+                    padding: 7px 11px;
 
                     display: flex;
                     align-items: center;
                     gap: 7px;
 
-                    font-size: 13px;
+                    font-size: 12px;
                     font-weight: 650;
+                }
+
+                .login-menu {
+                    position: relative;
+                }
+
+                .login-menu > summary {
+                    list-style: none;
+                }
+
+                .login-menu > summary::-webkit-details-marker {
+                    display: none;
+                }
+
+                .login-menu-options {
+                    position: absolute;
+                    top: calc(100% + 7px);
+                    right: 0;
+                    z-index: 1200;
+                    min-width: 170px;
+                    display: grid;
+                    gap: 4px;
+                    padding: 6px;
+                    border: 1px solid #dce3eb;
+                    border-radius: 10px;
+                    background: #ffffff;
+                    box-shadow: 0 8px 24px rgba(20, 40, 70, 0.14);
+                }
+
+                .login-menu-options a {
+                    padding: 9px 10px;
+                    border-radius: 7px;
+                    color: #344054;
+                    font-size: 12px;
+                    font-weight: 650;
+                    text-decoration: none;
+                }
+
+                .login-menu-options a:hover {
+                    background: #f1f6ff;
+                    color: #1769e0;
+                }
+
+                .dark .login-menu-options {
+                    border-color: #37445a;
+                    background: #172033;
+                }
+
+                .dark .login-menu-options a {
+                    color: #d7deea;
+                }
+
+                .dark .login-menu-options a:hover {
+                    background: #1d355b;
+                    color: #ffffff;
                 }
 
                 .dark .nav-button {
@@ -1549,7 +1638,7 @@ export default function SatelliteDashboard() {
                 .main {
                     max-width: 1400px;
                     margin: auto;
-                    padding: 22px;
+                    padding: 12px 18px;
                 }
 
                 .top-grid {
@@ -1557,9 +1646,9 @@ export default function SatelliteDashboard() {
                     grid-template-columns:
                         1fr 1fr;
 
-                    gap: 16px;
+                    gap: 10px;
 
-                    margin-bottom: 16px;
+                    margin-bottom: 10px;
                 }
 
                 .card {
@@ -1586,7 +1675,7 @@ export default function SatelliteDashboard() {
                 /* NETWORK */
 
                 .network-card {
-                    padding: 20px;
+                    padding: 14px;
                     border-left: 4px solid #1769e0;
                 }
 
@@ -1609,25 +1698,25 @@ export default function SatelliteDashboard() {
                     align-items: baseline;
                     gap: 8px;
 
-                    margin-top: 8px;
+                    margin-top: 6px;
                 }
 
                 .network-number strong {
-                    font-size: 44px;
+                    font-size: 36px;
                     line-height: 1;
                     color: #1769e0;
                 }
 
                 .network-number span {
                     color: #677489;
-                    font-size: 17px;
+                    font-size: 14px;
                     font-weight: 700;
                 }
 
                 .network-line {
                     height: 1px;
                     background: #e5e9ef;
-                    margin: 15px 0;
+                    margin: 10px 0;
                 }
 
                 .dark .network-line {
@@ -1647,7 +1736,7 @@ export default function SatelliteDashboard() {
                 /* CURRENT */
 
                 .current-card {
-                    padding: 20px;
+                    padding: 14px;
                     border-left: 4px solid #f0a900;
                 }
 
@@ -1677,9 +1766,9 @@ export default function SatelliteDashboard() {
                 }
 
                 .current-name {
-                    margin-top: 12px;
+                    margin-top: 7px;
 
-                    font-size: 25px;
+                    font-size: 21px;
                     font-weight: 800;
                 }
 
@@ -1717,7 +1806,7 @@ export default function SatelliteDashboard() {
                     align-items: center;
                     justify-content: space-between;
 
-                    margin-top: 15px;
+                    margin-top: 10px;
                     gap: 8px;
                 }
 
@@ -1758,13 +1847,13 @@ export default function SatelliteDashboard() {
                     grid-template-columns:
                         repeat(4, 1fr);
 
-                    gap: 16px;
+                    gap: 10px;
 
-                    margin-bottom: 18px;
+                    margin-bottom: 10px;
                 }
 
                 .metric {
-                    padding: 17px;
+                    padding: 12px;
                     border-top: 3px solid #1769e0;
                 }
 
@@ -1798,9 +1887,9 @@ export default function SatelliteDashboard() {
                 }
 
                 .metric-value {
-                    margin-top: 9px;
+                    margin-top: 6px;
 
-                    font-size: 27px;
+                    font-size: 23px;
                     font-weight: 800;
                 }
 
@@ -1819,11 +1908,11 @@ export default function SatelliteDashboard() {
                         minmax(0, 1.15fr)
                         minmax(340px, 0.85fr);
 
-                    gap: 18px;
+                    gap: 12px;
                 }
 
                 .section-card {
-                    padding: 18px;
+                    padding: 12px;
                 }
 
                 .section-header {
@@ -1833,7 +1922,7 @@ export default function SatelliteDashboard() {
 
                     gap: 10px;
 
-                    padding-bottom: 14px;
+                    padding-bottom: 10px;
 
                     border-bottom:
                         1px solid #e4e8ee;
@@ -1867,9 +1956,9 @@ export default function SatelliteDashboard() {
                 /* MAP */
 
                 .map-container {
-                    height: 500px;
+                    height: 220px;
 
-                    margin-top: 15px;
+                    margin-top: 10px;
 
                     position: relative;
 
@@ -2030,7 +2119,7 @@ export default function SatelliteDashboard() {
 
                     gap: 8px;
 
-                    max-height: 500px;
+                    max-height: 280px;
 
                     overflow-y: auto;
 
@@ -2352,7 +2441,7 @@ export default function SatelliteDashboard() {
                     margin: auto;
 
                     padding:
-                        20px 22px 28px;
+                        12px 18px 16px;
 
                     display: flex;
 
@@ -2415,7 +2504,7 @@ export default function SatelliteDashboard() {
                     }
 
                     .map-container {
-                        height: 420px;
+                        height: 200px;
                     }
                 }
 
@@ -2426,11 +2515,6 @@ export default function SatelliteDashboard() {
                     }
 
                     .brand-subtitle {
-                        display: none;
-                    }
-
-                    .header-actions
-                        .download-button {
                         display: none;
                     }
 
@@ -2453,7 +2537,7 @@ export default function SatelliteDashboard() {
                     }
 
                     .map-container {
-                        height: 360px;
+                        height: 180px;
                     }
 
                     .details-grid {
@@ -2497,19 +2581,22 @@ export default function SatelliteDashboard() {
                     </div>
 
                     <div className="header-actions">
-                        <button
-                            className="icon-button download-button"
-                            onClick={() =>
-                                downloadCSV(
-                                    filteredSatellites,
-                                )
-                            }
-                            title="Download telemetry"
-                        >
-                            <Download
-                                size={17}
-                            />
-                        </button>
+                        <details className="login-menu">
+                            <summary className="nav-button">
+                                Login
+                            </summary>
+                            <div className="login-menu-options">
+                                <Link to="/login/school">
+                                    School Login
+                                </Link>
+                                <Link to="/login/student">
+                                    Student Login
+                                </Link>
+                                <Link to="/login/admin">
+                                    Admin Login
+                                </Link>
+                            </div>
+                        </details>
 
                         <button
                             className="icon-button"
@@ -2673,7 +2760,9 @@ export default function SatelliteDashboard() {
 
                                 <div className="network-number">
                                     <strong>
-                                        {onlineCount.toLocaleString()}
+                                        {registeredSatelliteCount === null
+                                            ? "—"
+                                            : registeredSatelliteCount.toLocaleString()}
                                     </strong>
 
                                     <span>
@@ -2686,8 +2775,9 @@ export default function SatelliteDashboard() {
 
                                 <div className="network-footer">
                                     <span>
-                                        {onlineCount.toLocaleString()}{" "}
-                                        reporting
+                                        {registeredSatelliteCount === null
+                                            ? "Database registration count unavailable; restart the backend"
+                                            : `${onlineCount.toLocaleString()} reporting`}
                                     </span>
 
                                     <span>

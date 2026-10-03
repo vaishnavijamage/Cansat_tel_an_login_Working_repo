@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
     Link,
+    useLocation,
     useNavigate,
     useSearchParams,
 } from "react-router-dom";
@@ -13,17 +14,19 @@ import {
 
 export default function Login() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchParams] = useSearchParams();
 
     /*
      * Determine login type from URL.
      *
-     * /login              → School Login
-     * /login?type=school  → School Login
-     * /login?type=student → Student Login
+     * /login and /login/school → School Login
+     * /login/student           → Student Login
      */
     const type =
-        searchParams.get("type") === "student"
+        location.pathname === "/login/student" ||
+        (location.pathname !== "/login/school" &&
+            searchParams.get("type") === "student")
             ? "student"
             : "school";
 
@@ -156,9 +159,9 @@ export default function Login() {
              * protected separately.
              */
             if (isStudent) {
-                navigate("/student-dashboard");
+                navigate("/student");
             } else {
-                navigate("/dashboard");
+                navigate("/school");
             }
         } catch (error) {
             console.error(
@@ -308,14 +311,14 @@ export default function Login() {
                     {isStudent ? (
                         <>
                             Are you a school?{" "}
-                            <Link to="/login?type=school">
+                            <Link to="/login/school">
                                 School Login
                             </Link>
                         </>
                     ) : (
                         <>
                             Are you a student?{" "}
-                            <Link to="/login?type=student">
+                            <Link to="/login/student">
                                 Student Login
                             </Link>
                         </>
