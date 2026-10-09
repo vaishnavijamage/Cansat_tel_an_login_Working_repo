@@ -138,10 +138,14 @@ function parseServerDate(
         return null;
     }
 
-    const normalized =
+    let normalized =
         value.includes("T")
             ? value
             : value.replace(" ", "T");
+
+    if (!normalized.endsWith("Z")) {
+        normalized += "Z";
+    }
 
     const date = new Date(normalized);
 

@@ -15,6 +15,7 @@ async function createSatellite(satelliteId) {
             is_active
         )
         VALUES (?, TRUE)
+        ON DUPLICATE KEY UPDATE is_active = TRUE
         `,
         [satelliteId]
     );

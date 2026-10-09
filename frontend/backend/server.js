@@ -1,3 +1,6 @@
+const telemetryRedis = require("./telemetryRedis");
+const telemetryPool = require("./telemetryDatabase");
+
 const telemetryReadRoutes =
     require("./telemetryReadRoutes");
 
@@ -57,6 +60,9 @@ const {
 
 const app = express();
 
+/* Nginx is the trusted edge proxy in production. */
+app.set("trust proxy", 1);
+
 const PORT = Number(process.env.PORT) || 5000;
 
 const FRONTEND_URL =
@@ -98,7 +104,7 @@ app.use(cookieParser());
  */
 app.use(
     "/api/v1/telemetry",
-    telemetryRoutes
+    telemetryRoutes.router
 );
 
 
@@ -122,6 +128,22 @@ app.get("/api/health", (req, res) => {
 });
 
 
+/* Readiness checks the dependencies required to accept and persist telemetry. */
+app.get("/api/ready", async (req, res) => {
+    try {
+        if (!telemetryRedis.isTelemetryRedisReady()) {
+            throw new Error("Redis is not ready.");
+        }
+
+        await telemetryPool.query("SELECT 1");
+        return res.status(200).json({ success: true, message: "Backend is ready." });
+    } catch {
+        return res.status(503).json({
+            success: false,
+            message: "Telemetry dependencies are unavailable.",
+        });
+    }
+});
 /*
  * School registration
  */
@@ -1137,8 +1159,16 @@ app.use((error, req, res, next) => {
 /*
  * Start server
  */
-app.listen(PORT, () => {
+telemetryRedis.connectTelemetryRedis();
+
+const server = app.listen(PORT, "0.0.0.0", Number(process.env.HTTP_LISTEN_BACKLOG) || 8192, () => {
     console.log(
         `Backend server running on port ${PORT}`
     );
 });
+
+server.keepAliveTimeout = Number(process.env.HTTP_KEEP_ALIVE_TIMEOUT_MS) || 65000;
+server.headersTimeout = Number(process.env.HTTP_HEADERS_TIMEOUT_MS) || 66000;
+
+require('./mqttBroker').startMqttBroker();
+

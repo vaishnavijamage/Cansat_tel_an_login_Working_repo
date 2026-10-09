@@ -10,61 +10,57 @@ const GROUP_NAME =
     process.env.TELEMETRY_REDIS_GROUP ||
     "telemetry-workers";
 
-/**
- * Make sure Redis is connected.
- */
-async function ensureRedisConnection() {
-    if (!telemetryRedis.isOpen) {
-        await telemetryRedis.connect();
+let queueReady = false;
+let queueInitPromise = null;
+
+function redisUnavailableError() {
+    const error = new Error("Telemetry queue is unavailable.");
+    error.code = "TELEMETRY_QUEUE_UNAVAILABLE";
+    return error;
+}
+
+function requireReadyRedis() {
+    if (!telemetryRedis.isTelemetryRedisReady()) {
+        throw redisUnavailableError();
     }
 }
 
-/**
- * Create the telemetry stream and consumer group
- * if they do not already exist.
- */
+/* Create the stream/group once per process, not once for every POST. */
 async function ensureTelemetryQueue() {
-    await ensureRedisConnection();
+    requireReadyRedis();
 
-    try {
-        await telemetryRedis.xGroupCreate(
+    if (queueReady) {
+        return;
+    }
+
+    if (!queueInitPromise) {
+        queueInitPromise = telemetryRedis.xGroupCreate(
             STREAM_NAME,
             GROUP_NAME,
             "$",
-            {
-                MKSTREAM: true,
+            { MKSTREAM: true }
+        ).catch((error) => {
+            if (!String(error.message).includes("BUSYGROUP")) {
+                throw error;
             }
-        );
-    } catch (error) {
-        if (!String(error.message).includes("BUSYGROUP")) {
-            throw error;
-        }
+        }).then(() => {
+            queueReady = true;
+        }).finally(() => {
+            queueInitPromise = null;
+        });
     }
+
+    return queueInitPromise;
 }
 
-/**
- * Add one telemetry packet to the Redis Stream.
- */
 async function enqueueTelemetry(packet) {
     await ensureTelemetryQueue();
 
-    const packetId =
-        `${packet.satellite_id}:${packet.packet_hash}`;
-
-    const streamId =
-        await telemetryRedis.xAdd(
-            STREAM_NAME,
-            "*",
-            {
-                packet_id: packetId,
-                satellite_id:
-                    packet.satellite_id,
-                payload:
-                    JSON.stringify(packet),
-            }
-        );
-
-    return streamId;
+    return telemetryRedis.xAdd(STREAM_NAME, "*", {
+        packet_id: `${packet.satellite_id}:${packet.packet_hash}`,
+        satellite_id: packet.satellite_id,
+        payload: JSON.stringify(packet),
+    });
 }
 
 module.exports = {
@@ -72,4 +68,5 @@ module.exports = {
     GROUP_NAME,
     ensureTelemetryQueue,
     enqueueTelemetry,
+    redisUnavailableError,
 };

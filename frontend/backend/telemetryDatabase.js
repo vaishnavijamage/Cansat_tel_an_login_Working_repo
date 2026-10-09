@@ -12,7 +12,7 @@ const telemetryPool = mysql.createPool({
     connectionLimit:
         Number(
             process.env.TELEMETRY_DB_CONNECTION_LIMIT
-        ) || 10,
+        ) || 200,
     queueLimit: 0,
 
     enableKeepAlive: true,

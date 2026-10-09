@@ -11,11 +11,13 @@ import {
     Moon,
     Navigation,
     RefreshCw,
+    School,
     Search,
     Satellite,
     Signal,
     Sun,
     Thermometer,
+    User,
     X,
 } from "lucide-react";
 
@@ -23,6 +25,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+import indoLogo from "./assets/indo logo.jpeg";
+import isroLogo from "./assets/isro.png";
+import sparkLogo from "./assets/spark.png";
 
 /* =========================================================
    TYPES
@@ -1675,20 +1681,22 @@ export default function SatelliteDashboard() {
                 /* NETWORK */
 
                 .network-card {
-                    padding: 14px;
-                    border-left: 4px solid #1769e0;
+                    padding: 20px;
+                    background: #6366f1;
+                    border: none;
+                    border-radius: 18px;
+                    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
                 }
 
-                .card-label {
-                    display: flex;
-                    align-items: center;
-                    gap: 7px;
-
-                    color: #1769e0;
-
+                .network-card .card-label,
+                .network-card .network-number span,
+                .network-card .network-footer {
+                    color: rgba(255, 255, 255, 0.85);
+                }
+                
+                .network-card .card-label {
                     font-size: 12px;
                     font-weight: 800;
-
                     text-transform: uppercase;
                     letter-spacing: 0.3px;
                 }
@@ -1697,47 +1705,52 @@ export default function SatelliteDashboard() {
                     display: flex;
                     align-items: baseline;
                     gap: 8px;
-
                     margin-top: 6px;
                 }
 
-                .network-number strong {
+                .network-card .network-number strong {
                     font-size: 36px;
                     line-height: 1;
-                    color: #1769e0;
+                    color: white;
                 }
 
                 .network-number span {
-                    color: #677489;
                     font-size: 14px;
                     font-weight: 700;
                 }
 
                 .network-line {
                     height: 1px;
-                    background: #e5e9ef;
-                    margin: 10px 0;
-                }
-
-                .dark .network-line {
-                    background: #2b374b;
+                    background: rgba(255, 255, 255, 0.2);
+                    margin: 12px 0;
                 }
 
                 .network-footer {
                     display: flex;
                     justify-content: space-between;
-
                     gap: 10px;
-
-                    color: #647184;
                     font-size: 12px;
                 }
 
                 /* CURRENT */
 
                 .current-card {
-                    padding: 14px;
-                    border-left: 4px solid #f0a900;
+                    padding: 20px;
+                    background: #10b981;
+                    border: none;
+                    border-radius: 18px;
+                    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+                }
+
+                .current-card .card-label,
+                .current-card .current-school,
+                .current-card .humidity {
+                    color: rgba(255, 255, 255, 0.85);
+                }
+
+                .current-card .current-name,
+                .current-card .temperature {
+                    color: white;
                 }
 
                 .current-top {
@@ -1747,58 +1760,40 @@ export default function SatelliteDashboard() {
                 }
 
                 .current-badge {
-                    background: #fff3cc;
-                    color: #925d00;
-
-                    border: 1px solid #f1cf6a;
+                    background: rgba(255, 255, 255, 0.2);
+                    color: white;
+                    border: 1px solid rgba(255, 255, 255, 0.4);
                     border-radius: 999px;
-
-                    padding: 5px 9px;
-
+                    padding: 5px 10px;
                     font-size: 11px;
-                    font-weight: 750;
-                }
-
-                .dark .current-badge {
-                    background: #463713;
-                    color: #f6d87c;
-                    border-color: #67531e;
+                    font-weight: 800;
                 }
 
                 .current-name {
                     margin-top: 7px;
-
                     font-size: 21px;
                     font-weight: 800;
                 }
 
                 .current-school {
-                    color: #697586;
                     font-size: 12px;
                     margin-top: 4px;
-                }
-
-                .dark .current-school {
-                    color: #abb6c8;
                 }
 
                 .current-reading {
                     display: flex;
                     justify-content: space-between;
                     align-items: flex-end;
-
                     margin-top: 12px;
                 }
 
                 .temperature {
                     font-size: 30px;
                     font-weight: 800;
-                    color: #a55b00;
                 }
 
                 .humidity {
                     font-size: 12px;
-                    color: #687386;
                 }
 
                 .current-controls {
@@ -1853,24 +1848,31 @@ export default function SatelliteDashboard() {
                 }
 
                 .metric {
-                    padding: 12px;
-                    border-top: 3px solid #1769e0;
+                    padding: 16px;
+                    border-radius: 18px;
+                    color: white;
+                    border-top: none;
+                    box-shadow: none;
                 }
 
                 .metric.temperature-card {
-                    border-top-color: #dc3545;
+                    background: #fe6a96;
+                    box-shadow: 0 8px 20px rgba(254, 106, 150, 0.25);
                 }
 
                 .metric.humidity-card {
-                    border-top-color: #2388c8;
+                    background: #4bd396;
+                    box-shadow: 0 8px 20px rgba(75, 211, 150, 0.25);
                 }
 
                 .metric.pressure-card {
-                    border-top-color: #15956b;
+                    background: #bc8bfa;
+                    box-shadow: 0 8px 20px rgba(188, 139, 250, 0.25);
                 }
 
                 .metric.altitude-card {
-                    border-top-color: #7c3aed;
+                    background: #1c9bea;
+                    box-shadow: 0 8px 20px rgba(28, 155, 234, 0.25);
                 }
 
                 .metric-label {
@@ -1878,7 +1880,7 @@ export default function SatelliteDashboard() {
                     align-items: center;
                     gap: 7px;
 
-                    color: #687386;
+                    color: rgba(255,255,255,0.9);
 
                     font-size: 11px;
                     font-weight: 800;
@@ -1891,10 +1893,11 @@ export default function SatelliteDashboard() {
 
                     font-size: 23px;
                     font-weight: 800;
+                    color: white;
                 }
 
                 .metric-note {
-                    color: #7a8698;
+                    color: rgba(255,255,255,0.8);
                     font-size: 11px;
                     margin-top: 4px;
                 }
@@ -2549,6 +2552,309 @@ export default function SatelliteDashboard() {
                         flex-direction: column;
                     }
                 }
+
+                /* =========================================
+                   PROFESSIONAL WHITE/BLUE REDESIGN
+                   Overrides all previous layout and colors
+                ========================================= */
+                
+                body {
+                    margin: 0 !important;
+                    font-family: 'Inter', system-ui, sans-serif !important;
+                    background-color: #f4f7fb !important;
+                    color: #334155 !important;
+                }
+
+                .dashboard {
+                    display: grid !important;
+                    grid-template-columns: 260px 1fr !important;
+                    grid-template-rows: 75px 1fr !important;
+                    grid-template-areas:
+                        "sidebar header"
+                        "sidebar main" !important;
+                    min-height: 100vh !important;
+                    background: #f4f7fb !important;
+                }
+
+                /* HEADER & SIDEBAR STRUCTURE */
+                .header { display: contents !important; }
+
+                .nav {
+                    grid-area: sidebar !important;
+                    background: #ffffff !important;
+                    border-right: 1px solid #e2e8f0 !important;
+                    padding: 24px 20px !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    gap: 12px !important;
+                    margin: 0 !important;
+                    max-width: none !important;
+                    border-radius: 0 !important;
+                    box-shadow: 2px 0 10px rgba(0,0,0,0.02) !important;
+                    height: 100vh !important;
+                    position: sticky !important;
+                    top: 0 !important;
+                }
+
+                .header-inner {
+                    grid-area: header !important;
+                    background: #ffffff !important;
+                    border-bottom: 1px solid #e2e8f0 !important;
+                    padding: 0 32px !important;
+                    margin: 0 !important;
+                    max-width: none !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
+                }
+
+                /* SIDEBAR ITEMS */
+                .nav-button {
+                    background: transparent !important;
+                    border: none !important;
+                    color: #64748b !important;
+                    padding: 14px 16px !important;
+                    border-radius: 8px !important;
+                    font-size: 14px !important;
+                    font-weight: 600 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    gap: 14px !important;
+                    justify-content: flex-start !important;
+                    width: 100% !important;
+                    transition: all 0.2s !important;
+                }
+
+                .nav-button:hover {
+                    background: #f8fafc !important;
+                    color: #0ea5e9 !important;
+                }
+
+                .nav-button.active {
+                    background: #e0f2fe !important;
+                    color: #0284c7 !important;
+                    border-left: 4px solid #0284c7 !important;
+                    border-radius: 4px 8px 8px 4px !important;
+                }
+
+                .live-status {
+                    margin-top: auto !important;
+                    margin-left: 0 !important;
+                    background: #f0fdf4 !important;
+                    border: 1px solid #bbf7d0 !important;
+                    color: #166534 !important;
+                    border-radius: 8px !important;
+                    padding: 12px 16px !important;
+                    justify-content: center !important;
+                    width: 100% !important;
+                }
+
+                /* BRAND IN HEADER */
+                .brand { gap: 16px !important; }
+                .brand-icon {
+                    background: #0284c7 !important;
+                    color: white !important;
+                    border-radius: 10px !important;
+                    width: 44px !important;
+                    height: 44px !important;
+                }
+                .brand-title { color: #0f172a !important; font-size: 20px !important; font-weight: 800 !important; }
+                .brand-subtitle { color: #64748b !important; font-size: 13px !important; }
+
+                /* MAIN CONTENT LAYOUT */
+                .main {
+                    grid-area: main !important;
+                    padding: 20px !important;
+                    max-width: 1500px !important;
+                    margin: 0 auto !important;
+                    width: 100% !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    gap: 16px !important;
+                }
+
+                /* REORDER SECTIONS TO MATCH REFERENCE IMAGE */
+                .top-grid { order: 1 !important; }
+                .metrics { order: 2 !important; margin-bottom: 0 !important; }
+                .content-grid { order: 3 !important; } 
+
+                /* CARDS GENERAL */
+                .card {
+                    background: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
+                    border-radius: 8px !important;
+                    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.05) !important;
+                }
+
+                /* METRICS (Middle Row) */
+                .metrics {
+                    display: grid !important;
+                    grid-template-columns: repeat(4, 1fr) !important;
+                    gap: 16px !important;
+                }
+
+                .metric {
+                    padding: 16px !important;
+                    border: none !important;
+                    border-radius: 8px !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    position: relative !important;
+                    overflow: hidden !important;
+                    color: white !important;
+                }
+
+                .metric.temperature-card { background: #84cc16 !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important; }
+                .metric.humidity-card { background: #38bdf8 !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important; }
+                .metric.pressure-card { background: #a78bfa !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important; }
+                .metric.altitude-card { background: #34d399 !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important; }
+
+                .metric-label {
+                    color: rgba(255, 255, 255, 0.9) !important;
+                    font-size: 12px !important;
+                    font-weight: 600 !important;
+                    letter-spacing: 0.5px !important;
+                }
+                .metric-value {
+                    color: white !important;
+                    font-size: 24px !important;
+                    font-weight: 700 !important;
+                    margin-top: 8px !important;
+                }
+                .metric-note { color: rgba(255, 255, 255, 0.8) !important; font-size: 12px !important; margin-top: 6px !important; }
+
+                /* TOP GRID (Top Row - Network & Current) */
+                .top-grid {
+                    display: grid !important;
+                    grid-template-columns: 1fr 1.5fr !important;
+                    gap: 16px !important;
+                }
+
+                .network-card {
+                    padding: 24px !important;
+                    background: #0ea5e9 !important;
+                    border: none !important;
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+                    border-radius: 8px !important;
+                    color: white !important;
+                }
+                .network-card .card-label, .network-card .network-number span, .network-card .network-footer { color: rgba(255, 255, 255, 0.8) !important; font-size: 14px !important; }
+                .network-card .network-number strong { color: white !important; font-size: 42px !important; }
+                .network-line { background: rgba(255, 255, 255, 0.2) !important; margin: 12px 0 !important; }
+
+                .current-card {
+                    padding: 24px !important;
+                    background: #0284c7 !important;
+                    border: none !important;
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+                    border-radius: 8px !important;
+                    color: white !important;
+                }
+                .current-card .card-label, .current-card .current-school, .current-card .humidity { color: rgba(255, 255, 255, 0.8) !important; font-size: 14px !important; }
+                .current-card .current-name, .current-card .temperature { color: white !important; }
+                .current-top { border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important; padding-bottom: 12px !important; margin-bottom: 12px !important; }
+                .current-badge { background: rgba(255, 255, 255, 0.2) !important; color: white !important; border: 1px solid rgba(255, 255, 255, 0.4) !important; font-size: 12px !important; padding: 4px 8px !important; }
+                
+                .current-name { font-size: 24px !important; }
+                .current-school { font-size: 14px !important; }
+                .temperature { font-size: 36px !important; }
+                .humidity { font-size: 11px !important; }
+
+                /* MAP & DIRECTORY (Bottom Row) */
+                .content-grid {
+                    display: grid !important;
+                    grid-template-columns: 1.2fr 2fr !important;
+                    gap: 16px !important;
+                }
+
+                .section-card {
+                    padding: 16px !important;
+                    background: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
+                    border-radius: 8px !important;
+                    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.05) !important;
+                }
+
+                .section-header { border-bottom: 1px solid #f1f5f9 !important; padding-bottom: 16px !important; margin-bottom: 20px !important; }
+                .section-title { color: #0f172a !important; font-size: 18px !important; font-weight: 800 !important; }
+                .section-description { color: #64748b !important; }
+
+                .map-container { border-radius: 8px !important; border: 1px solid #e2e8f0 !important; height: 200px !important; }
+
+                /* DIRECTORY LIST */
+                .search-box { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; padding: 14px 16px !important; }
+                .satellite-list { max-height: 450px !important; gap: 12px !important; }
+                .satellite-item {
+                    background: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
+                    border-radius: 8px !important;
+                    padding: 16px !important;
+                    transition: all 0.2s !important;
+                }
+                .satellite-item:hover, .satellite-item.selected {
+                    border-color: #0284c7 !important;
+                    background: #f0f9ff !important;
+                    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.1) !important;
+                }
+                .satellite-name { color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
+                .satellite-school { color: #64748b !important; }
+                .satellite-readings { border-top: 1px solid #f1f5f9 !important; padding-top: 12px !important; margin-top: 12px !important; }
+                .reading { color: #64748b !important; }
+                .reading strong { color: #0f172a !important; }
+
+                /* BUTTONS */
+                .small-button {
+                    background: #f8fafc !important;
+                    border: 1px solid #e2e8f0 !important;
+                    color: #475569 !important;
+                    border-radius: 6px !important;
+                    font-weight: 600 !important;
+                    padding: 8px 16px !important;
+                }
+                .small-button:hover { background: #f1f5f9 !important; }
+                .small-button.primary { background: #0ea5e9 !important; color: white !important; border: none !important; }
+                .small-button.primary:hover { background: #0284c7 !important; }
+
+                /* DETAILS PANEL */
+                .details-panel { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; padding: 20px !important; margin-top: 20px !important; }
+                .details-title { color: #0f172a !important; }
+                .detail-box { background: #ffffff !important; border: 1px solid #e2e8f0 !important; border-radius: 6px !important; padding: 12px !important; }
+                .detail-label { color: #64748b !important; }
+                .detail-value { color: #0f172a !important; }
+
+                /* DARK THEME SUPPORT */
+                .dashboard.dark { background: #0f172a !important; color: #f8fafc !important; }
+                .dashboard.dark .nav { background: #1e293b !important; border-right-color: #334155 !important; }
+                .dashboard.dark .header-inner { background: #1e293b !important; border-bottom-color: #334155 !important; }
+                .dashboard.dark .brand-title { color: white !important; }
+                
+                .dashboard.dark .card { background: #1e293b !important; border-color: #334155 !important; }
+                .dashboard.dark .section-card { background: #1e293b !important; border-color: #334155 !important; }
+                .dashboard.dark .section-title { color: white !important; }
+                .dashboard.dark .search-box { background: #0f172a !important; border-color: #334155 !important; color: white !important;}
+                .dashboard.dark .satellite-item { background: #1e293b !important; border-color: #334155 !important; }
+                .dashboard.dark .satellite-item:hover { background: #334155 !important; border-color: #0ea5e9 !important; }
+                .dashboard.dark .satellite-name { color: white !important; }
+                .dashboard.dark .satellite-readings { border-top-color: #334155 !important; }
+                .dashboard.dark .reading { color: #94a3b8 !important; }
+                .dashboard.dark .reading strong { color: white !important; }
+                
+                .dashboard.dark .details-panel { background: #0f172a !important; border-color: #334155 !important; }
+                .dashboard.dark .details-title { color: white !important; }
+                .dashboard.dark .detail-box { background: #1e293b !important; border-color: #334155 !important; }
+                .dashboard.dark .detail-value { color: white !important; }
+                
+                .dashboard.dark .small-button { background: #334155 !important; border-color: #475569 !important; color: white !important; }
+                .dashboard.dark .small-button:hover { background: #475569 !important; }
+                .dashboard.dark .small-button.primary { background: #0ea5e9 !important; color: white !important; border: none !important; }
+                
+                .dashboard.dark .nav-button:hover { background: #334155 !important; color: #38bdf8 !important; }
+                .dashboard.dark .nav-button.active { background: #0c4a6e !important; color: #38bdf8 !important; border-left-color: #38bdf8 !important; }
+                .dashboard.dark .live-status { background: #064e3b !important; border-color: #059669 !important; color: #34d399 !important; }
+                .dashboard.dark .map-container { border-color: #334155 !important; }
+                .dashboard.dark .section-header { border-bottom-color: #334155 !important; }
+
             `}</style>
 
             {/* =================================================
@@ -2557,6 +2863,12 @@ export default function SatelliteDashboard() {
 
             <header className="header">
                 <div className="header-inner">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginRight: '15px' }}>
+                        <img src={indoLogo} alt="Indo" style={{ height: '45px', objectFit: 'contain' }} />
+                        <img src={isroLogo} alt="ISRO" style={{ height: '45px', objectFit: 'contain' }} />
+                        <img src={sparkLogo} alt="Spark" style={{ height: '45px', objectFit: 'contain' }} />
+                    </div>
+
                     <div className="brand">
                         <div className="brand-icon">
                             <Satellite
@@ -2758,18 +3070,7 @@ export default function SatelliteDashboard() {
                                     Satellites
                                 </div>
 
-                                <div className="network-number">
-                                    <strong>
-                                        {registeredSatelliteCount === null
-                                            ? "—"
-                                            : registeredSatelliteCount.toLocaleString()}
-                                    </strong>
-
-                                    <span>
-                                        /{" "}
-                                        {TOTAL_SATELLITES.toLocaleString()}
-                                    </span>
-                                </div>
+                                <div className="network-number"><strong>{satellites.length.toLocaleString()}</strong><span> / {TOTAL_SATELLITES.toLocaleString()}</span></div>
 
                                 <div className="network-line" />
 
@@ -2828,6 +3129,7 @@ export default function SatelliteDashboard() {
                                             {
                                                 currentSatellite.school
                                             }
+                                            {currentSatellite.student ? ` • ${currentSatellite.student}` : ""}
                                         </div>
 
                                         <div className="current-reading">
@@ -3050,109 +3352,111 @@ export default function SatelliteDashboard() {
                                     }
                                 />
 
-                                {currentSatellite && (
-                                    <div className="details-panel">
-                                        <div className="details-header">
-                                            <div>
-                                                <div className="details-title">
+                                {selectedSatellite && currentSatellite && (
+                                    <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setSelectedSatellite(null)}>
+                                        <div className="details-panel" style={{ backgroundColor: 'white', maxWidth: '600px', width: '90%', position: 'relative', margin: 0, boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
+                                            <button style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }} onClick={() => setSelectedSatellite(null)}>
+                                                <X size={24} />
+                                            </button>
+                                            <div className="details-header">
+                                                <div>
+                                                    <div className="details-title">
+                                                        {currentSatellite.name}
+                                                    </div>
+
+                                                    <div className="section-description">
+                                                        {currentSatellite.school}
+                                                        {currentSatellite.student ? ` - ${currentSatellite.student}` : ""}
+                                                    </div>
+                                                </div>
+
+                                                <div
+                                                    className={`status ${currentSatellite.status}`}
+                                                >
+                                                    <span className="status-dot" />
+
                                                     {
-                                                        currentSatellite.name
+                                                        currentSatellite.status
                                                     }
                                                 </div>
-
-                                                <div className="section-description">
-                                                    {
-                                                        currentSatellite.school
-                                                    }
-                                                </div>
                                             </div>
 
-                                            <div
-                                                className={`status ${currentSatellite.status}`}
-                                            >
-                                                <span className="status-dot" />
+                                            <div className="details-grid">
+                                                <div className="detail-box">
+                                                    <div className="detail-label">
+                                                        Temperature
+                                                    </div>
 
-                                                {
-                                                    currentSatellite.status
-                                                }
-                                            </div>
-                                        </div>
-
-                                        <div className="details-grid">
-                                            <div className="detail-box">
-                                                <div className="detail-label">
-                                                    Temperature
+                                                    <div className="detail-value">
+                                                        {
+                                                            currentSatellite.temperature
+                                                        }
+                                                        °C
+                                                    </div>
                                                 </div>
 
-                                                <div className="detail-value">
-                                                    {
-                                                        currentSatellite.temperature
-                                                    }
-                                                    °C
-                                                </div>
-                                            </div>
+                                                <div className="detail-box">
+                                                    <div className="detail-label">
+                                                        Humidity
+                                                    </div>
 
-                                            <div className="detail-box">
-                                                <div className="detail-label">
-                                                    Humidity
-                                                </div>
-
-                                                <div className="detail-value">
-                                                    {
-                                                        currentSatellite.humidity
-                                                    }
-                                                    %
-                                                </div>
-                                            </div>
-
-                                            <div className="detail-box">
-                                                <div className="detail-label">
-                                                    Pressure
+                                                    <div className="detail-value">
+                                                        {
+                                                            currentSatellite.humidity
+                                                        }
+                                                        %
+                                                    </div>
                                                 </div>
 
-                                                <div className="detail-value">
-                                                    {
-                                                        currentSatellite.pressure
-                                                    }{" "}
-                                                    hPa
-                                                </div>
-                                            </div>
+                                                <div className="detail-box">
+                                                    <div className="detail-label">
+                                                        Pressure
+                                                    </div>
 
-                                            <div className="detail-box">
-                                                <div className="detail-label">
-                                                    Altitude
-                                                </div>
-
-                                                <div className="detail-value">
-                                                    {
-                                                        currentSatellite.altitude
-                                                    }{" "}
-                                                    m
-                                                </div>
-                                            </div>
-
-                                            <div className="detail-box">
-                                                <div className="detail-label">
-                                                    Battery
+                                                    <div className="detail-value">
+                                                        {
+                                                            currentSatellite.pressure
+                                                        }{" "}
+                                                        hPa
+                                                    </div>
                                                 </div>
 
-                                                <div className="detail-value">
-                                                    {
-                                                        currentSatellite.battery
-                                                    }
-                                                    %
-                                                </div>
-                                            </div>
+                                                <div className="detail-box">
+                                                    <div className="detail-label">
+                                                        Altitude
+                                                    </div>
 
-                                            <div className="detail-box">
-                                                <div className="detail-label">
-                                                    Updated
+                                                    <div className="detail-value">
+                                                        {
+                                                            currentSatellite.altitude
+                                                        }{" "}
+                                                        m
+                                                    </div>
                                                 </div>
 
-                                                <div className="detail-value">
-                                                    {new Date(
-                                                        currentSatellite.timestamp,
-                                                    ).toLocaleTimeString()}
+                                                <div className="detail-box">
+                                                    <div className="detail-label">
+                                                        Battery
+                                                    </div>
+
+                                                    <div className="detail-value">
+                                                        {
+                                                            currentSatellite.battery
+                                                        }
+                                                        %
+                                                    </div>
+                                                </div>
+
+                                                <div className="detail-box">
+                                                    <div className="detail-label">
+                                                        Updated
+                                                    </div>
+
+                                                    <div className="detail-value">
+                                                        {new Date(
+                                                            currentSatellite.timestamp,
+                                                        ).toLocaleTimeString()}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -3261,16 +3565,22 @@ export default function SatelliteDashboard() {
                                                         </span>
                                                     </div>
 
-                                                    <div className="satellite-name">
-                                                        {
-                                                            satellite.name
-                                                        }
+                                                    <div className="satellite-name" style={{ fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px" }}>
+                                                        <Satellite size={18} color="#3b82f6" />
+                                                        {satellite.name}
                                                     </div>
 
-                                                    <div className="satellite-school">
-                                                        {
-                                                            satellite.school
-                                                        }
+                                                    <div className="satellite-school" style={{ fontSize: "1rem", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
+                                                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                                            <School size={16} color="#f59e0b" />
+                                                            {satellite.school}
+                                                        </span>
+                                                        {satellite.student && (
+                                                            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                                                <User size={16} color="#10b981" />
+                                                                {satellite.student}
+                                                            </span>
+                                                        )}
                                                     </div>
 
                                                     <div className="satellite-readings">
@@ -3448,16 +3758,22 @@ export default function SatelliteDashboard() {
                                                 </span>
                                             </div>
 
-                                            <div className="satellite-name">
-                                                {
-                                                    satellite.name
-                                                }
+                                            <div className="satellite-name" style={{ fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px" }}>
+                                                <Satellite size={18} color="#3b82f6" />
+                                                {satellite.name}
                                             </div>
 
-                                            <div className="satellite-school">
-                                                {
-                                                    satellite.school
-                                                }
+                                            <div className="satellite-school" style={{ fontSize: "1rem", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
+                                                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                                    <School size={16} color="#f59e0b" />
+                                                    {satellite.school}
+                                                </span>
+                                                {satellite.student && (
+                                                    <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                                        <User size={16} color="#10b981" />
+                                                        {satellite.student}
+                                                    </span>
+                                                )}
                                             </div>
 
                                             <div className="satellite-readings">

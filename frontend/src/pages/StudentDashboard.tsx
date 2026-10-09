@@ -9,6 +9,10 @@ import {
 
 import StudentSatelliteDashboard from "./StudentSatelliteDashboard";
 
+import indoLogo from "../assets/indo logo.jpeg";
+import isroLogo from "../assets/isro.png";
+import sparkLogo from "../assets/spark.png";
+
 import {
     getStudentProfile,
     logout,
@@ -869,6 +873,12 @@ export default function StudentDashboard() {
             <header className="student-top-header">
 
                 <div className="student-brand">
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginRight: '10px' }}>
+                        <img src={indoLogo} alt="Indo" style={{ height: '40px', objectFit: 'contain' }} />
+                        <img src={isroLogo} alt="ISRO" style={{ height: '40px', objectFit: 'contain' }} />
+                        <img src={sparkLogo} alt="Spark" style={{ height: '40px', objectFit: 'contain' }} />
+                    </div>
 
                     <div className="student-brand-icon">
                         <Activity size={21} />

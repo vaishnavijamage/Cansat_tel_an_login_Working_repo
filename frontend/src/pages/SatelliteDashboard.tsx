@@ -168,9 +168,14 @@ function parseServerDate(value: string | null): Date | null {
         return null;
     }
 
-    const normalized = value.includes("T")
+    let normalized = value.includes("T")
         ? value
         : value.replace(" ", "T");
+
+    if (!normalized.endsWith("Z")) {
+        normalized += "Z";
+    }
+
     const date = new Date(normalized);
 
     return Number.isNaN(date.getTime())

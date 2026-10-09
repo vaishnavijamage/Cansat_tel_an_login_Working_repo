@@ -1,4 +1,4 @@
-# CANSAT Login + Telemetry System — Complete Setup Guide
+# CANSAT Login + Telemetry System â€” Complete Setup Guide
 
 This guide is for anyone who downloads the project ZIP from GitHub and wants to run the complete local system.
 
@@ -6,24 +6,24 @@ This guide is for anyone who downloads the project ZIP from GitHub and wants to 
 
 ```text
 ESP8266
-   ↓
+   â†“
 Central Telemetry API (Node.js / Express)
-   ↓
+   â†“
 Redis Stream
-   ↓
+   â†“
 Telemetry Worker
-   ↓
+   â†“
 MySQL telemetry history + Redis latest state
-   ↓
+   â†“
 Telemetry Read APIs
-   ↓
+   â†“
 React dashboard
 
 Login system:
 School / Student / Admin
-        ↓
+        â†“
 Node.js / Express
-        ↓
+        â†“
 Login MySQL database
 
 students.satellite_id connects the login system to telemetry.
@@ -64,11 +64,11 @@ Expected layout:
 
 ```text
 CANSAT/
-├── backend/
-├── frontend/
-├── database/
-├── firmware/        (if included)
-└── README.md
+â”œâ”€â”€ backend/
+â”œâ”€â”€ frontend/
+â”œâ”€â”€ database/
+â”œâ”€â”€ firmware/        (if included)
+â””â”€â”€ README.md
 ```
 
 Open the project in VS Code.
@@ -100,7 +100,7 @@ Main packages:
 | Package | Purpose |
 |---|---|
 | express | REST/API server |
-| cors | frontend ↔ backend access |
+| cors | frontend â†” backend access |
 | cookie-parser | session cookie parsing |
 | dotenv | `.env` configuration |
 | mysql2 | MySQL connection |
@@ -337,10 +337,10 @@ The worker flow is:
 
 ```text
 Redis Stream
-→ batch processing
-→ MySQL
-→ Redis latest state
-→ ACK
+â†’ batch processing
+â†’ MySQL
+â†’ Redis latest state
+â†’ ACK
 ```
 
 ## 12. Start the frontend
@@ -398,7 +398,7 @@ npm run dev
 Shortcut:
 
 ```text
-Docker/Redis → server.js → telemetryWorker.js → frontend
+Docker/Redis â†’ server.js â†’ telemetryWorker.js â†’ frontend
 ```
 
 ## 14. Test login and student creation
@@ -493,18 +493,18 @@ Central API HTTP status: 202
 
 ```text
 ESP8266
-→ POST /api/v1/telemetry
-→ fleet authentication
-→ satellite validation
-→ telemetry validation
-→ SHA-256 packet_hash
-→ Redis Stream
-→ HTTP 202
-→ telemetryWorker
-→ MySQL telemetry history
-→ Redis latest state
-→ read APIs
-→ React dashboard
+â†’ POST /api/v1/telemetry
+â†’ fleet authentication
+â†’ satellite validation
+â†’ telemetry validation
+â†’ SHA-256 packet_hash
+â†’ Redis Stream
+â†’ HTTP 202
+â†’ telemetryWorker
+â†’ MySQL telemetry history
+â†’ Redis latest state
+â†’ read APIs
+â†’ React dashboard
 ```
 
 The ESP does not connect directly to MySQL or Redis.
@@ -572,7 +572,7 @@ So:
 
 ```text
 202
-≠
+â‰ 
 "MySQL insert is already finished"
 ```
 
@@ -587,13 +587,13 @@ packet accepted for processing
 When Redis is running:
 
 ```text
-ESP → API → Redis → 202
+ESP â†’ API â†’ Redis â†’ 202
 ```
 
 When Redis is unavailable:
 
 ```text
-ESP → API → Redis ✕
+ESP â†’ API â†’ Redis âœ•
 ```
 
 The API should return a controlled `503` rather than a false successful acceptance.
@@ -606,11 +606,11 @@ After Redis returns:
 
 ```text
 Redis
-→ worker reconnects
-→ pending Stream packets
-→ MySQL commit
-→ latest-state update
-→ ACK
+â†’ worker reconnects
+â†’ pending Stream packets
+â†’ MySQL commit
+â†’ latest-state update
+â†’ ACK
 ```
 
 ## 22. Failure test
@@ -715,11 +715,11 @@ When a school/admin deletes a student:
 
 ```text
 Login DB student deleted
-        ↓
+        â†“
 read satellite_id
-        ↓
+        â†“
 Telemetry DB satellite deactivated
-        ↓
+        â†“
 is_active = 0
 ```
 
@@ -814,11 +814,21 @@ The architecture is designed around 1,200+ satellites, but real capacity must be
 ## 28. One-line startup memory
 
 ```text
-Docker/Redis → node server.js → node telemetryWorker.js → npm run dev
+Docker/Redis â†’ node server.js â†’ node telemetryWorker.js â†’ npm run dev
 ```
 
 ## 29. One-line system memory
 
 ```text
-ESP8266 → Central API → Redis Stream → Worker → MySQL + Redis latest → APIs → React Dashboard
+ESP8266 â†’ Central API â†’ Redis Stream â†’ Worker â†’ MySQL + Redis latest â†’ APIs â†’ React Dashboard
 ```
+
+## Production readiness and recovery
+
+`/api/health` is a liveness endpoint. Deployments must use `/api/ready` for traffic readiness: it returns `503` unless both Redis (the ingest hand-off) and the telemetry MySQL database are usable.
+
+The worker retains Redis Stream entries for the configurable recovery window and trims only when the group has no pending messages, so active work is never trimmed. Redis is deliberately configured with `maxmemory-policy noeviction`. When it reaches its limit, ingestion must return `503` and ESP devices retry the identical packet; it must never evict queued packets. Use [deployment/redis/redis.conf](./deployment/redis/redis.conf) with persistent storage and set monitoring alerts at 80% memory, on failed readiness checks, rejected `XADD`s, pending-message age/count, worker errors, and backup failures.
+
+Load the current telemetry schema from [database/telemetry_schema.sql](./database/telemetry_schema.sql). Take tested, encrypted MySQL backups (point-in-time recovery/binlogs if available) and Redis AOF/volume snapshots. Restore drills must confirm the worker drains pending stream entries and that MySQL remains the permanent historical record. Redis is a recovery buffer/latest cache, not the only backup.
+
+Before claiming 1,200+ production readiness, run the paced, burst, Redis-loss/recovery, and restore tests from a separate load-generator host. The HTTP backlog setting is a guardrail only; it does not replace a reverse proxy/load balancer or OS socket tuning.

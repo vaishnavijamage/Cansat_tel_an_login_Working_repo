@@ -11,12 +11,15 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "aedes": "^0.51.2",
+    "aedes-server-factory": "^0.2.1",
     "argon2": "^0.45.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.0",
+    "mqtt": "^5.16.0",
     "mysql2": "^3.24.3",
     "rate-limit-redis": "^6.0.1",
     "redis": "^6.2.1"

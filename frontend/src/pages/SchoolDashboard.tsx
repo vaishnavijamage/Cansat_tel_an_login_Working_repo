@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 
 import SatelliteDashboard from "./SatelliteDashboard";
 
+import indoLogo from "../assets/indo logo.jpeg";
+import isroLogo from "../assets/isro.png";
+import sparkLogo from "../assets/spark.png";
+
 import {
     activateStudent,
     createStudent,
@@ -799,7 +803,13 @@ export default function SchoolDashboard() {
                     </div>
 
 
-                    <div className="sd-topbar-right">
+                    <div className="sd-topbar-right" style={{ display: 'flex', alignItems: 'center' }}>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginRight: '20px' }}>
+                            <img src={indoLogo} alt="Indo" style={{ height: '40px', objectFit: 'contain' }} />
+                            <img src={isroLogo} alt="ISRO" style={{ height: '40px', objectFit: 'contain' }} />
+                            <img src={sparkLogo} alt="Spark" style={{ height: '40px', objectFit: 'contain' }} />
+                        </div>
 
                         <div className="sd-online">
 

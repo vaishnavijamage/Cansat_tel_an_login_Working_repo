@@ -376,7 +376,7 @@ async function requestSchoolPasswordReset(email) {
         success: true,
         message:
             "If the account exists, password recovery instructions will be sent.",
-        resetToken,
+        ...(process.env.NODE_ENV === "production" ? {} : { resetToken }),
     };
 }
 

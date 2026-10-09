@@ -104,7 +104,7 @@ async function authenticateSatellite(
             req.get("Authorization")?.trim();
 
         if (!satelliteId) {
-            return res.status(401).json({
+            console.log("401 FAILED:", req.get("X-Satellite-ID"), req.get("Authorization"), FLEET_API_KEY); return res.status(401).json({
                 success: false,
                 message:
                     "Satellite authentication required.",
@@ -116,7 +116,7 @@ async function authenticateSatellite(
                 satelliteId
             )
         ) {
-            return res.status(401).json({
+            console.log("401 FAILED:", req.get("X-Satellite-ID"), req.get("Authorization"), FLEET_API_KEY); return res.status(401).json({
                 success: false,
                 message:
                     "Invalid satellite identity.",
@@ -127,7 +127,7 @@ async function authenticateSatellite(
             !authorization ||
             !authorization.startsWith("Bearer ")
         ) {
-            return res.status(401).json({
+            console.log("401 FAILED:", req.get("X-Satellite-ID"), req.get("Authorization"), FLEET_API_KEY); return res.status(401).json({
                 success: false,
                 message:
                     "Satellite authentication required.",
@@ -138,7 +138,7 @@ async function authenticateSatellite(
             authorization.slice(7).trim();
 
         if (!suppliedKey) {
-            return res.status(401).json({
+            console.log("401 FAILED:", req.get("X-Satellite-ID"), req.get("Authorization"), FLEET_API_KEY); return res.status(401).json({
                 success: false,
                 message:
                     "Satellite authentication required.",
@@ -151,7 +151,7 @@ async function authenticateSatellite(
                 FLEET_API_KEY
             )
         ) {
-            return res.status(401).json({
+            console.log("401 FAILED:", req.get("X-Satellite-ID"), req.get("Authorization"), FLEET_API_KEY); return res.status(401).json({
                 success: false,
                 message:
                     "Invalid satellite credentials.",
@@ -167,7 +167,7 @@ async function authenticateSatellite(
             !satellite ||
             !satellite.is_active
         ) {
-            return res.status(401).json({
+            console.log("401 FAILED:", req.get("X-Satellite-ID"), req.get("Authorization"), FLEET_API_KEY); return res.status(401).json({
                 success: false,
                 message:
                     "Invalid satellite credentials.",
@@ -314,4 +314,6 @@ module.exports = {
     authenticateSatellite,
     initializeTelemetrySecurity,
     invalidateSatelliteAuthCache,
+    safeSecretCompare,
+    getCachedSatellite,
 };

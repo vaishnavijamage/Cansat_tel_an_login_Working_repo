@@ -5,19 +5,19 @@
  *
  * Flow:
  * Satellite
- *   ↓
+ *   â†“
  * Fleet authentication
- *   ↓
+ *   â†“
  * Satellite registration check
- *   ↓
+ *   â†“
  * Rate limiting
- *   ↓
+ *   â†“
  * Packet validation
- *   ↓
+ *   â†“
  * Packet hash generation
- *   ↓
+ *   â†“
  * Redis Stream
- *   ↓
+ *   â†“
  * 202 Accepted
  */
 
@@ -32,6 +32,8 @@ const {
 const {
     enqueueTelemetry,
 } = require("./telemetryQueue");
+
+const telemetryRedis = require("./telemetryRedis");
 
 const router = express.Router();
 
@@ -284,6 +286,14 @@ router.post(
             /*
              * Initialize Redis-backed rate limiter.
              */
+            /* Redis is the durable hand-off; never wait through reconnects. */
+            if (!telemetryRedis.isTelemetryRedisReady()) {
+                res.set("Retry-After", "1");
+                return res.status(503).json({
+                    success: false,
+                    message: "Telemetry temporarily unavailable. Please retry.",
+                });
+            }
             const rateLimiter =
                 await initializeTelemetrySecurity();
 
@@ -471,4 +481,8 @@ router.post(
     }
 );
 
-module.exports = router;
+module.exports = {
+    router,
+    validateTelemetryPacket,
+    toMySqlUtcDateTime,
+};
